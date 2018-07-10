@@ -111,12 +111,15 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
 
             var baselineFileName = Path.ChangeExtension(FileName, ".syntaxtree.txt");
             var baselineDiagnosticsFileName = Path.ChangeExtension(FileName, ".diagnostics.txt");
+            var baselineClassifiedSpansFileName = Path.ChangeExtension(FileName, ".classifiedspans.txt");
 
             if (GenerateBaselines)
             {
+                // Write syntax tree baseline
                 var baselineFullPath = Path.Combine(TestProjectRoot, baselineFileName);
                 File.WriteAllText(baselineFullPath, SyntaxTreeNodeSerializer.Serialize(root));
 
+                // Write diagnostics baseline
                 var baselineDiagnosticsFullPath = Path.Combine(TestProjectRoot, baselineDiagnosticsFileName);
                 var lines = diagnostics.Select(SerializeDiagnostic).ToArray();
                 if (lines.Any())
@@ -128,9 +131,14 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
                     File.Delete(baselineDiagnosticsFullPath);
                 }
 
+                // Write classified spans baseline
+                var classifiedSpansBaselineFullPath = Path.Combine(TestProjectRoot, baselineClassifiedSpansFileName);
+                File.WriteAllText(classifiedSpansBaselineFullPath, ClassifiedSpanSerializer.Serialize(root));
+
                 return;
             }
 
+            // Verify syntax tree
             var stFile = TestFile.Create(baselineFileName, GetType().GetTypeInfo().Assembly);
             if (!stFile.Exists())
             {
@@ -140,6 +148,7 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
             var baseline = stFile.ReadAllText().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             SyntaxTreeNodeVerifier.Verify(root, baseline);
 
+            // Verify diagnostics
             var baselineDiagnostics = string.Empty;
             var diagnosticsFile = TestFile.Create(baselineDiagnosticsFileName, GetType().GetTypeInfo().Assembly);
             if (diagnosticsFile.Exists())
@@ -149,6 +158,16 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
 
             var actualDiagnostics = string.Concat(diagnostics.Select(d => SerializeDiagnostic(d) + "\r\n"));
             Assert.Equal(baselineDiagnostics, actualDiagnostics);
+
+            // Verify classified spans
+            var classifiedSpanFile = TestFile.Create(baselineClassifiedSpansFileName, GetType().GetTypeInfo().Assembly);
+            if (!classifiedSpanFile.Exists())
+            {
+                throw new XunitException($"The resource {baselineClassifiedSpansFileName} was not found.");
+            }
+
+            var classifiedSpanBaseline = classifiedSpanFile.ReadAllText().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            ClassifiedSpanVerifier.Verify(root, classifiedSpanBaseline);
         }
 
         private static string SerializeDiagnostic(RazorDiagnostic diagnostic)
