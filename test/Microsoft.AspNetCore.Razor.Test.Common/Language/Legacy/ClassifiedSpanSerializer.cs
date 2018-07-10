@@ -7,11 +7,11 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
 {
     internal class ClassifiedSpanSerializer
     {
-        internal static string Serialize(SyntaxTreeNode node)
+        internal static string Serialize(SyntaxTreeNode node, string filePath = null)
         {
             using (var writer = new StringWriter())
             {
-                var visitor = new ClassifiedSpanWriter(writer);
+                var visitor = new ClassifiedSpanWriter(writer, filePath);
                 visitor.Visit(node);
 
                 return writer.ToString();

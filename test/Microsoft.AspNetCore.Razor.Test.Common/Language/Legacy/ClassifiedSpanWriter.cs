@@ -9,16 +9,18 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
 {
     internal class ClassifiedSpanWriter
     {
+        private readonly string _filePath;
         private readonly TextWriter _writer;
 
-        public ClassifiedSpanWriter(TextWriter writer)
+        public ClassifiedSpanWriter(TextWriter writer, string filePath)
         {
             _writer = writer;
+            _filePath = filePath;
         }
 
         public virtual void Visit(SyntaxTreeNode node)
         {
-            var classifiedSpans = GetClassifiedSpans(node);
+            var classifiedSpans = GetClassifiedSpans(node, _filePath);
             foreach (var span in classifiedSpans)
             {
                 VisitClassifiedSpan(span);
@@ -53,7 +55,7 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
             _writer.Write(value);
         }
 
-        internal static IReadOnlyList<ClassifiedSpanInternal> GetClassifiedSpans(SyntaxTreeNode root)
+        internal static IReadOnlyList<ClassifiedSpanInternal> GetClassifiedSpans(SyntaxTreeNode root, string filePath)
         {
             var spans = Flatten(root);
 
@@ -63,13 +65,13 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
                 var span = spans[i];
                 result[i] = new ClassifiedSpanInternal(
                     new SourceSpan(
-                        span.Start.FilePath,
+                        span.Start.FilePath ?? filePath,
                         span.Start.AbsoluteIndex,
                         span.Start.LineIndex,
                         span.Start.CharacterIndex,
                         span.Length),
                     new SourceSpan(
-                        span.Parent.Start.FilePath,
+                        span.Parent.Start.FilePath ?? filePath,
                         span.Parent.Start.AbsoluteIndex,
                         span.Parent.Start.LineIndex,
                         span.Parent.Start.CharacterIndex,

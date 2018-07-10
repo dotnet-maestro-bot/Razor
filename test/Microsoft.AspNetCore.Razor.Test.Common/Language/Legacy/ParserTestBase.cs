@@ -92,10 +92,10 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
 
         internal void AssertSyntaxTreeNodeMatchesBaseline(RazorSyntaxTree syntaxTree)
         {
-            AssertSyntaxTreeNodeMatchesBaseline(syntaxTree.Root, syntaxTree.Diagnostics.ToArray());
+            AssertSyntaxTreeNodeMatchesBaseline(syntaxTree.Root, syntaxTree.Source.FilePath, syntaxTree.Diagnostics.ToArray());
         }
 
-        internal void AssertSyntaxTreeNodeMatchesBaseline(Block root, params RazorDiagnostic[] diagnostics)
+        internal void AssertSyntaxTreeNodeMatchesBaseline(Block root, string filePath, params RazorDiagnostic[] diagnostics)
         {
             if (FileName == null)
             {
@@ -133,7 +133,7 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
 
                 // Write classified spans baseline
                 var classifiedSpansBaselineFullPath = Path.Combine(TestProjectRoot, baselineClassifiedSpansFileName);
-                File.WriteAllText(classifiedSpansBaselineFullPath, ClassifiedSpanSerializer.Serialize(root));
+                File.WriteAllText(classifiedSpansBaselineFullPath, ClassifiedSpanSerializer.Serialize(root, filePath));
 
                 return;
             }
@@ -167,7 +167,7 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
             }
 
             var classifiedSpanBaseline = classifiedSpanFile.ReadAllText().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            ClassifiedSpanVerifier.Verify(root, classifiedSpanBaseline);
+            ClassifiedSpanVerifier.Verify(root, filePath, classifiedSpanBaseline);
         }
 
         private static string SerializeDiagnostic(RazorDiagnostic diagnostic)
@@ -193,14 +193,14 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
             AssertSyntaxTreeNodeMatchesBaseline(syntaxTree);
         }
 
-        internal virtual void BaselineTest(Block root, bool verifySyntaxTree = true, params RazorDiagnostic[] diagnostics)
+        internal virtual void BaselineTest(Block root, string filePath = null, bool verifySyntaxTree = true, params RazorDiagnostic[] diagnostics)
         {
             if (verifySyntaxTree)
             {
                 SyntaxTreeVerifier.Verify(root);
             }
 
-            AssertSyntaxTreeNodeMatchesBaseline(root, diagnostics);
+            AssertSyntaxTreeNodeMatchesBaseline(root, filePath, diagnostics);
         }
 
         internal RazorSyntaxTree ParseBlock(string document, bool designTime)

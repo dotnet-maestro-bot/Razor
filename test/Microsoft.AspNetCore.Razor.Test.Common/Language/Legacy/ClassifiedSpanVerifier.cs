@@ -10,11 +10,11 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
 {
     internal class ClassifiedSpanVerifier
     {
-        internal static void Verify(SyntaxTreeNode node, string[] baseline)
+        internal static void Verify(SyntaxTreeNode node, string filePath, string[] baseline)
         {
             using (var writer = new StringWriter())
             {
-                var walker = new Walker(writer, baseline);
+                var walker = new Walker(writer, filePath, baseline);
                 walker.Visit(node);
                 walker.AssertReachedEndOfBaseline();
             }
@@ -27,7 +27,7 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
 
             private int _index;
 
-            public Walker(StringWriter writer, string[] baseline) : base(writer)
+            public Walker(StringWriter writer, string filePath, string[] baseline) : base(writer, filePath)
             {
                 _writer = writer;
                 _baseline = baseline;
@@ -40,7 +40,7 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
                 _writer.GetStringBuilder().Clear();
                 base.VisitClassifiedSpan(span);
                 var actual = _writer.GetStringBuilder().ToString();
-                AssertEquals(span, expected, actual);
+                AssertEqual(span, expected, actual);
             }
 
             public void AssertReachedEndOfBaseline()
@@ -49,7 +49,7 @@ namespace Microsoft.AspNetCore.Razor.Language.Legacy
                 Assert.True(_baseline.Length == _index, $"Not all lines of the baseline were visited! {_baseline.Length} {_index}");
             }
 
-            private void AssertEquals(ClassifiedSpanInternal span, string expected, string actual)
+            private void AssertEqual(ClassifiedSpanInternal span, string expected, string actual)
             {
                 if (string.Equals(expected, actual))
                 {
